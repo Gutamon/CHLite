@@ -86,20 +86,18 @@ with gr.Blocks() as demo:
                 result_output = gr.Textbox(label="回應結果")
                 
             with gr.Tab("課表"):
+                class_display = gr.Dataframe(label="📌 課表紀錄", value=progress_data["classsheet"])
+
                 with gr.Row():
                     with gr.Column(scale=1):
-                        class_display = gr.Dataframe(label="📌 課表紀錄", value=progress_data["classsheet"])
-                    with gr.Column(scale=2):
-                        with gr.Row():
-                            with gr.Column(scale=1):
-                                gr.Markdown("### 用Excel上傳課表")
-                                course_file_csv = gr.File(label="上傳Excel", file_types=[".csv", ".xls", ".xlsx"])
-                                upload_class_btn_excel = gr.Button("載入課程")
-                            with gr.Column(scale=1):
-                                gr.Markdown("### 用圖片上傳課表")
-                                course_file_img = gr.File(label="上傳圖片", file_types=[".png", ".jpg", ".jpeg"])
-                                upload_class_btn_img = gr.Button("載入課程")
-                        upload_class_msg = gr.Textbox(label="偵測到的結果", interactive=False)
+                        gr.Markdown("### 用Excel上傳課表")
+                        course_file_csv = gr.File(label="上傳Excel", file_types=[".csv", ".xls", ".xlsx"])
+                        upload_class_btn_excel = gr.Button("載入課程")
+                    with gr.Column(scale=1):
+                        gr.Markdown("### 用圖片上傳課表")
+                        course_file_img = gr.File(label="上傳圖片", file_types=[".png", ".jpg", ".jpeg"])
+                        upload_class_btn_img = gr.Button("載入課程")
+                upload_class_msg = gr.Textbox(label="偵測到的結果", interactive=False)
                 
                 gr.Markdown("### 編輯/刪除課程")
                 class_dropdown = gr.Dropdown(label="選擇課程", choices=[], allow_custom_value=True)
