@@ -13,7 +13,7 @@ from activity import upload_poster, add_activity, edit_activity, delete_activity
 from classsheet import upload_class_excel, upload_class_image, edit_class, delete_class
 
 # 初始化時載入預設進度檔（如果存在）
-default_progress_file = "CHLite_Progress.xlsx"
+default_progress_file = "C:/CHLite/CHLite.xlsx"
 if os.path.exists(default_progress_file):
     msg, span1_update, span2_update, course_choices, assignment_choices, activity_choices, class_choices, assignment_df, activity_df, class_df = upload_progress(default_progress_file)
     progress_data["classsheet"] = class_df
@@ -22,7 +22,8 @@ if os.path.exists(default_progress_file):
 else:
     course_choices, assignment_choices, activity_choices, class_choices = [], [], [], []
 
-
+# 確保 C:/CHLite 資料夾存在
+os.makedirs("C:/CHLite", exist_ok=True)
 
 with gr.Blocks() as demo:
     gr.Markdown("## CHLite, Your Course Helper is Lite")
@@ -30,7 +31,7 @@ with gr.Blocks() as demo:
     span2 = gr.Group(visible=False)
     
     with span1:
-        progress_file = gr.File(label="你的進度檔", file_types=[".csv", ".xls", ".xlsx"])
+        progress_file = gr.File(label="你的進度檔", file_types=[".csv", ".xls", ".xlsx"])  # 移除 file_explorer_root，加入提示
         with gr.Row():
             upload_progress_btn = gr.Button("上傳進度檔")
             first_use_btn = gr.Button("初次使用")
@@ -83,7 +84,7 @@ with gr.Blocks() as demo:
                 with gr.Row():
                     edit_activity_btn = gr.Button("編輯活動")
                     delete_activity_btn = gr.Button("刪除活動")
-                result_output = gr.Textbox(label="回應結果")
+                result_output = gr.Textbox(label="")
                 
             with gr.Tab("課表"):
                 class_display = gr.Dataframe(label="📌 課表紀錄", value=progress_data["classsheet"])
@@ -91,16 +92,16 @@ with gr.Blocks() as demo:
                 with gr.Row():
                     with gr.Column(scale=1):
                         gr.Markdown("### 用Excel上傳課表")
-                        course_file_csv = gr.File(label="上傳Excel", file_types=[".csv", ".xls", ".xlsx"])
+                        course_file_csv = gr.File(label="上傳課程Excel（請選擇 C:/CHLite/ 資料夾）", file_types=[".csv", ".xls", ".xlsx"])  # 加入提示
                         upload_class_btn_excel = gr.Button("載入課程")
                     with gr.Column(scale=1):
                         gr.Markdown("### 用圖片上傳課表")
-                        course_file_img = gr.File(label="上傳圖片", file_types=[".png", ".jpg", ".jpeg"])
+                        course_file_img = gr.File(label="上傳課程圖片", file_types=[".png", ".jpg", ".jpeg"])
                         upload_class_btn_img = gr.Button("載入課程")
                 upload_class_msg = gr.Textbox(label="偵測到的結果", interactive=False)
                 
                 gr.Markdown("### 編輯/刪除課程")
-                class_dropdown = gr.Dropdown(label="選擇課程", choices=[], allow_custom_value=True)
+                class_dropdown = gr.Dropdown(label="選擇課程", choices=course_choices, allow_custom_value=True)
                 edit_class_name_input = gr.Textbox(label="新課程名稱")
                 edit_class_semester_input = gr.Textbox(label="新課程學期(0-0)")
                 edit_class_day_input = gr.Textbox(label="新課程日")
@@ -110,10 +111,11 @@ with gr.Blocks() as demo:
                     edit_class_btn = gr.Button("編輯課程")
                     delete_class_btn = gr.Button("刪除課程")
         
-        download_btn = gr.DownloadButton(label="匯出記錄檔", value="CHLite_Progress.xlsx")
+        # download_btn = gr.DownloadButton(label="匯出記錄檔", value="C:/CHLite/CHLite.xlsx")
+        download_btn = gr.Button("存檔至 C:/CHLite")
         
     # Helper function to update dropdown choices
-    def update_dropdowns():
+    def update_dropdown():
         course_choices = progress_data["classsheet"]["name"].tolist()
         assignment_choices = progress_data["assignment"]["title"].tolist()
         activity_choices = progress_data["activity"]["title"].tolist()
@@ -121,14 +123,14 @@ with gr.Blocks() as demo:
             gr.update(choices=course_choices),  # 更新 course_dropdown
             gr.update(choices=assignment_choices),  # 更新 assignment_dropdown
             gr.update(choices=activity_choices),  # 更新 activity_dropdown
-            gr.update(choices=course_choices)  # 更新 class_dropdown
+            gr.update(choices=course_choices)   # 更新 class_dropdown
         )
     
     # Helper function to export progress file
     def export_progress():
         try:
             output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            with pd.ExcelWriter(output, engine="openpyxl") as writer:
                 classsheet_clean = progress_data["classsheet"].fillna("").astype(str)
                 assignment_clean = progress_data["assignment"].fillna("").astype(str)
                 activity_clean = progress_data["activity"].fillna("").astype(str)
@@ -137,7 +139,11 @@ with gr.Blocks() as demo:
                 assignment_clean.to_excel(writer, sheet_name="assignment", index=False)
                 activity_clean.to_excel(writer, sheet_name="activity", index=False)
             
-            with open("test_output.xlsx", "wb") as f:
+            # 確保 C:/CHLite/ 資料夾存在
+            os.makedirs("C:/CHLite", exist_ok=True)
+            output_path = "C:/CHLite/CHLite.xlsx"
+            
+            with open(output_path, "wb") as f:
                 f.write(output.getvalue())
             
             output.seek(0)
@@ -151,22 +157,20 @@ with gr.Blocks() as demo:
                 gr.update(visible=False)
             )
         except Exception as e:
-            print(f"匯出失敗：{str(e)}")
+            print(f"匯出失敗: {e}")
             return None, gr.update(visible=True), gr.update(visible=False)
     
     # Event handlers
-    # 更新 upload_class_btn_excel 的事件處理器
     upload_class_btn_excel.click(
         fn=upload_class_excel,
         inputs=course_file_csv,
         outputs=[upload_class_msg, class_display, class_dropdown, course_dropdown]
     )
-
-    # 更新 upload_class_btn_img 的事件處理器
+    
     upload_class_btn_img.click(
         fn=upload_class_image,
         inputs=course_file_img,
-        outputs=[upload_class_msg, class_display, class_dropdown, course_dropdown]  # 添加 course_dropdown
+        outputs=[upload_class_msg, class_display, class_dropdown, course_dropdown]
     )
     
     upload_progress_btn.click(
@@ -208,6 +212,7 @@ with gr.Blocks() as demo:
         inputs=[activity_dropdown, edit_act_title_input, edit_act_location_input, edit_act_date_input, edit_act_time_input],
         outputs=[result_output, activity_display, activity_dropdown]
     )
+    
     delete_activity_btn.click(
         fn=delete_activity,
         inputs=activity_dropdown,
