@@ -2,10 +2,7 @@ import gradio as gr
 import pandas as pd
 import io
 import os
-import requests
-import json
 import tempfile
-from datetime import datetime
 from data import progress_data
 from home import upload_progress, first_use
 from assignment import add_assignment, edit_assignment, delete_assignment
